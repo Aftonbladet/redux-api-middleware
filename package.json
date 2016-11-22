@@ -1,6 +1,6 @@
 {
   "name": "@aftonbladet/redux-api-middleware",
-  "version": "1.0.2-3",
+  "version": "1.1.0",
   "description": "Redux middleware for calling an API.",
   "main": "lib/index.js",
   "scripts": {
@@ -11,8 +11,8 @@
     "prepublish": "npm run lint && npm test && npm run clean && npm run build",
     "test": "babel-node test/index.js | tap-spec"
   },
-  "repository": "agraboso/redux-api-middleware",
-  "homepage": "https://github.com/agraboso/redux-api-middleware",
+  "repository": "Aftonbladet/redux-api-middleware",
+  "homepage": "https://github.com/Aftonbladet/redux-api-middleware",
   "keywords": [
     "redux",
     "api",
