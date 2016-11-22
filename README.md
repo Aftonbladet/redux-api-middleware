@@ -13,6 +13,7 @@ redux-api-middleware
 3. [Usage](#usage)
   - [Defining the API call](#defining-the-api-call)
   - [Bailing out](#bailing-out)
+  - [Caching](#caching)
   - [Lifecycle](#lifecycle)
   - [Customizing the dispatched FSAs](#customizing-the-dispatched-fsas)
 4. [Reference](#reference)
@@ -193,6 +194,36 @@ In some cases, the data you would like to fetch from the server may already be c
 You can tell `redux-api-middleware` to not make the API call through `[CALL_API].bailout`. If the value is `true`, the RSAA will die here, and no FSA will be passed on to the next middleware.
 
 A more useful possibility is to give `[CALL_API].bailout` a function. At runtime, it will be passed the state of your Redux store as its only argument, if the return value of the function is `true`, the API call will not be made.
+
+### Caching
+
+Often it is useful to be able to cache the API call being made to the server.
+
+You can tell `redux-api-middleware` to use a cache through `[CALL_API].cache`. The value should point to a function that will be passed the endpoint as the first argument and the resulting JSON data as the second argument.
+
+The second argument will only be passed when an API call has been made and there is data to store in the cache. If the function is called with only the endpoint it should return the cached data, if present.
+
+**NOTE** You will only be able to use a `[CALL_API].cache` function for APIs returning JSON data.
+
+An example cache implementation could look like this:
+
+```js
+{
+  [CALL_API]: {
+    ...
+    cache: (endpoint, dataToCache) => {
+      if (dataToCache) {
+        // Add data to cache
+        someCacheImplementation.put(endpoint, dataToCache);
+      } else {
+        // Return possibly cached data
+        return someCacheImplementation.has(endpoint) ? someCacheImplementation.get(endpoint) : undefined;
+      }
+    }
+    ...
+  }
+}
+```
 
 ### Lifecycle
 
@@ -555,10 +586,11 @@ The `[CALL_API]` property MAY
 - have an `options` property,
 - have a `credentials` property,
 - have a `bailout` property.
+- have a `cache` property.
 
 The `[CALL_API]` property MUST NOT
 
-- include properties other than `endpoint`, `method`, `types`, `body`, `headers`, `options`, `credentials`, and `bailout`.
+- include properties other than `endpoint`, `method`, `types`, `body`, `headers`, `options`, `credentials`, `bailout` and `cache`.
 
 #### `[CALL_API].endpoint`
 
@@ -588,6 +620,10 @@ The optional `[CALL_API].credentials` property MUST be one of the strings `omit`
 #### `[CALL_API].bailout`
 
 The optional `[CALL_API].bailout` property MUST be a boolean or a function.
+
+#### `[CALL_API].cache`
+
+The optional `[CALL_API].cache` property MUST be a function.
 
 #### `[CALL_API].types`
 
