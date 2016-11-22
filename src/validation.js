@@ -26,7 +26,7 @@ function isValidTypeDescriptor(obj) {
     'type',
     'payload',
     'meta'
-  ]
+  ];
 
   if (!isPlainObject(obj)) {
     return false;
@@ -64,7 +64,8 @@ function validateRSAA(action) {
     'headers',
     'credentials',
     'bailout',
-    'types'
+    'types',
+    'cache'
   ];
   const validMethods = [
     'GET',
@@ -79,7 +80,7 @@ function validateRSAA(action) {
     'omit',
     'same-origin',
     'include'
-  ]
+  ];
 
   if (!isRSAA(action)) {
     validationErrors.push('RSAAs must be plain JavaScript objects with a [CALL_API] property');
@@ -148,6 +149,10 @@ function validateRSAA(action) {
     if (typeof failureType !== 'string' && typeof failureType !== 'symbol' && !isValidTypeDescriptor(failureType)) {
       validationErrors.push('Invalid failure type');
     }
+  }
+
+  if (typeof cache !== 'undefined' && typeof cache !== 'function') {
+    validationErrors.push('[CALL_API].cache property must be undefined or a function');
   }
 
   return validationErrors;

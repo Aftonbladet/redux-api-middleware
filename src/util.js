@@ -19,6 +19,32 @@ async function getJSON(res) {
   }
 }
 
+function _fakeHeader(header = '') {
+  if (header.toLowerCase() === 'content-type') {
+    return 'application/json';
+  } else {
+    return 'faked header - cache is only supported for json responses';
+  }
+}
+
+/**
+ * Creates a faked fetch response that will return the given JSON
+ * when the `json` method is called. This is used when a JSON cache
+ * is used.
+ *
+ * @param {object} json the json to return by the faked fetch response
+ * @returns {{headers: {get: _fakeHeader}, status: number, statusText: string, json: json}}
+ */
+function fakeJsonResponse(json) {
+  return {
+    headers: { get: _fakeHeader },
+    ok: true,
+    status: 200,
+    statusText: 'OK',
+    json: function () { return json; }
+  };
+}
+
 /**
  * Blow up string or symbol types into full-fledged type descriptors,
  *   and add defaults
@@ -93,4 +119,4 @@ async function actionWith(descriptor, args) {
   return descriptor;
 }
 
-export { getJSON, normalizeTypeDescriptors, actionWith };
+export { getJSON, fakeJsonResponse, normalizeTypeDescriptors, actionWith };

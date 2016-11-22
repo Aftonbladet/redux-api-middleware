@@ -1,10 +1,9 @@
 import fetch from 'isomorphic-fetch';
-import isPlainObject from 'lodash.isplainobject';
 
 import CALL_API from './CALL_API';
 import { isRSAA, validateRSAA } from './validation';
-import { InvalidRSAA, RequestError, ApiError } from './errors' ;
-import { getJSON, normalizeTypeDescriptors, actionWith } from './util';
+import { InvalidRSAA, RequestError } from './errors' ;
+import { normalizeTypeDescriptors, actionWith, fakeJsonResponse } from './util';
 
 /**
  * A Redux middleware that processes RSAA actions.
@@ -40,7 +39,7 @@ function apiMiddleware({ getState }) {
     // Parse the validated RSAA action
     const callAPI = action[CALL_API];
     var { endpoint, headers, options = {} } = callAPI;
-    const { method, body, credentials, bailout, types } = callAPI;
+    const { method, body, credentials, bailout, types, cache } = callAPI;
     const [requestType, successType, failureType] = normalizeTypeDescriptors(types);
 
     // Should we bail out?
@@ -69,6 +68,28 @@ function apiMiddleware({ getState }) {
           {
             ...requestType,
             payload: new RequestError('[CALL_API].endpoint function failed'),
+            error: true
+          },
+          [action, getState()]
+        ));
+      }
+    }
+
+    // Is it cached?
+    if (typeof cache === 'function') {
+      try {
+        const cachedJson = await cache(endpoint);
+        if (cachedJson) {
+          return next(await actionWith(
+              successType,
+              [action, getState(), fakeJsonResponse(cachedJson)]
+          ));
+        }
+      } catch (e) {
+        return next(await actionWith(
+          {
+            ...requestType,
+            payload: new RequestError(`[CALL_API].cache function failed: ${e.message}`),
             error: true
           },
           [action, getState()]
@@ -134,10 +155,14 @@ function apiMiddleware({ getState }) {
 
     // Process the server response
     if (res.ok) {
-      return next(await actionWith(
-        successType,
-        [action, getState(), res]
-      ));
+      const action = await actionWith(
+          successType,
+          [action, getState(), res]
+      );
+      if (typeof cache === 'function') {
+        cache(endpoint, action.payload);
+      }
+      return next(action);
     } else {
       return next(await actionWith(
         {
