@@ -103,7 +103,7 @@ function validateRSAA(action) {
     }
   }
 
-  const { endpoint, method, headers, options, credentials, types, bailout } = callAPI;
+  const { endpoint, method, headers, options, credentials, types, bailout, cache } = callAPI;
   if (typeof endpoint === 'undefined') {
     validationErrors.push('[CALL_API] must have an endpoint property');
   } else if (typeof endpoint !== 'string' && typeof endpoint !== 'function') {
