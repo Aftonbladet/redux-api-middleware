@@ -123,11 +123,11 @@ test('validateRSAA/isValidRSAA must identify conformant RSAAs', (t) => {
   };
   t.ok(
     validateRSAA(action4).includes('Invalid [CALL_API] key: invalidKey'),
-    '[CALL_API] must not have properties other than endpoint, method, types, body, headers, credentials, options and bailout (validateRSAA)'
+    '[CALL_API] must not have properties other than endpoint, method, types, body, headers, credentials, options, cache and bailout (validateRSAA)'
   );
   t.notOk(
     isValidRSAA(action4),
-    '[CALL_API] must not have properties other than endpoint, method, types, body, headers, credentials, options and bailout (isValidRSAA)'
+    '[CALL_API] must not have properties other than endpoint, method, types, body, headers, credentials, options. cache and bailout (isValidRSAA)'
   );
 
   const action5 = {
@@ -521,6 +521,41 @@ test('validateRSAA/isValidRSAA must identify conformant RSAAs', (t) => {
   t.ok(
       isValidRSAA(action26),
       '[CALL_API].options may be a function (isRSAA)'
+  );
+
+  const action27 = {
+    [CALL_API]: {
+      endpoint: '',
+      method: 'GET',
+      types: ['REQUEST', 'SUCCESS', 'FAILURE'],
+      cache: ''
+    }
+  };
+  t.ok(
+      validateRSAA(action27).includes('[CALL_API].cache property must be undefined or a function'),
+      '[CALL_API].cache property must be undefined or a function (validateRSAA)'
+  );
+  t.notOk(
+      isValidRSAA(action27),
+      '[CALL_API].cache property must be undefined or a function (isValidRSAA)'
+  );
+
+  const action28 = {
+    [CALL_API]: {
+      endpoint: '',
+      method: 'GET',
+      types: ['REQUEST', 'SUCCESS', 'FAILURE'],
+      cache: () => {}
+    }
+  };
+  t.equal(
+      validateRSAA(action28).length,
+      0,
+      '[CALL_API].cache may be a function (validateRSAA)'
+  );
+  t.ok(
+      isValidRSAA(action28),
+      '[CALL_API].cache may be a function (isRSAA)'
   );
 
   t.end();
@@ -1189,6 +1224,52 @@ test('apiMiddleware must dispatch an error request FSA when [CALL_API].options f
   actionHandler(anAction);
 });
 
+test('apiMiddleware must dispatch an error request FSA when [CALL_API].cache fails', (t) => {
+  const anAction = {
+    [CALL_API]: {
+      endpoint: '',
+      method: 'GET',
+      cache: () => { throw new Error(); },
+      types: [
+        {
+          type: 'REQUEST',
+          payload: 'ignoredPayload',
+          meta: 'someMeta'
+        },
+        'SUCCESS',
+        'FAILURE'
+      ]
+    }
+  };
+  const doGetState = () => {};
+  const nextHandler = apiMiddleware({ getState: doGetState });
+  const doNext = (action) => {
+    t.pass('next handler called');
+    t.equal(
+        action.type,
+        'REQUEST',
+        'dispatched FSA has correct type property'
+    );
+    t.ok(
+        action.payload.message.startsWith('[CALL_API].cache function failed'),
+        'dispatched FSA has correct payload property'
+    );
+    t.equal(
+        action.meta,
+        'someMeta',
+        'dispatched FSA has correct meta property'
+    );
+    t.ok(
+        action.error,
+        'dispatched FSA has correct error property'
+    );
+  };
+  const actionHandler = nextHandler(doNext);
+
+  t.plan(5);
+  actionHandler(anAction);
+});
+
 test('apiMiddleware must dispatch an error request FSA on a request error', (t) => {
   const anAction = {
     [CALL_API]: {
@@ -1374,6 +1455,72 @@ test('apiMiddleware must use an [CALL_API].options function when present', (t) =
   const actionHandler = nextHandler(doNext);
 
   t.plan(1);
+  actionHandler(anAction);
+});
+
+test('apiMiddleware calls [CALL_API].cache function when present', (t) => {
+  let cacheCallCount = 0;
+  const data = { data: 'to cache' };
+  const api = nock('http://127.0.0.1')
+      .get('/api/data')
+      .reply(200, data, { 'Content-Type': 'application/json' });
+  const anAction = {
+    [CALL_API]: {
+      endpoint: 'http://127.0.0.1/api/data',
+      method: 'GET',
+      cache: (endpoint, dataToStore) => {
+        t.equal(
+            endpoint,
+            anAction[CALL_API].endpoint,
+            '[CALL_API].cache function called with correct endpoint');
+        t.deepEqual(
+            dataToStore,
+            ++cacheCallCount > 1 ? data : undefined,
+            '[CALL_API].cache function called with correct dataToStore');
+      },
+      types: ['REQUEST', 'SUCCESS', 'FAILURE']
+    }
+  };
+  const doGetState = () => {};
+  const nextHandler = apiMiddleware({ getState: doGetState });
+  const doNext = (action) => {};
+  const actionHandler = nextHandler(doNext);
+
+  t.plan(4);
+  actionHandler(anAction);
+});
+
+test('apiMiddleware returns cached data from [CALL_API].cache function when present', (t) => {
+  const data = { data: 'to cache' };
+  const api = nock('http://127.0.0.1')
+      .get(() => {
+        t.fail('The cache should have been used');
+        return false;
+      })
+      .reply(500);
+  const anAction = {
+    [CALL_API]: {
+      endpoint: 'http://127.0.0.1/api/data',
+      method: 'GET',
+      cache: () => {
+        t.pass('[CALL_API].cache returning cached data');
+        return data;
+      },
+      types: ['REQUEST', 'SUCCESS', 'FAILURE']
+    }
+  };
+  const doGetState = () => {};
+  const nextHandler = apiMiddleware({ getState: doGetState });
+  const doNext = (action) => {
+    t.equal(
+        action.payload,
+        data,
+        '[CALL_API].cache used and returns cached data'
+    );
+  };
+  const actionHandler = nextHandler(doNext);
+
+  t.plan(2);
   actionHandler(anAction);
 });
 
