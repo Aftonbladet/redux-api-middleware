@@ -623,7 +623,7 @@ The optional `[CALL_API].bailout` property MUST be a boolean or a function.
 
 #### `[CALL_API].cache`
 
-The optional `[CALL_API].cache` property MUST be a plain JavaSCript object implementing the functions `has`, `get` and `set`.
+The optional `[CALL_API].cache` property MUST be a plain JavaScript object implementing the functions `has`, `get` and `set`.
 
 ##### `has(endpoint)`
 Takes an `endpoint` as its only argument. Should return `true` if the endpoint is in the cache and valid. Otherwise `false` should be returned.
