@@ -81,7 +81,7 @@ function validateRSAA(action) {
     'same-origin',
     'include'
   ];
-  const validCacheFunctions = [
+  const requiredCacheFunctions = [
     'has',
     'get',
     'set'
@@ -156,13 +156,9 @@ function validateRSAA(action) {
     }
   }
 
-  if (typeof cache !== 'undefined') {
-    if (!isPlainObject(cache)) {
-      validationErrors.push('[CALL_API].cache property must be undefined or a plain JavaScript object');
-    } else if (Object.keys(cache).filter((k) => validCacheFunctions.indexOf(k) === -1).length > 0) {
-      validationErrors.push(`Invalid [CALL_API].cache functions: ${Object.keys(cache)}`);
-    } else if (typeof cache.has !== 'function' && typeof cache.get !== 'function' && typeof cache.set !== 'function') {
-      validationErrors.push(`[CALL_API].cache property must be an object implementing the functions: ${validCacheFunctions}`);
+  if (cache != null) {
+    if (!requiredCacheFunctions.every((f) => typeof cache[f] === 'function')) {
+      validationErrors.push(`[CALL_API].cache property must be undefined or an object implementing the functions: ${requiredCacheFunctions}`);
     }
   }
 

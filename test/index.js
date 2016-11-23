@@ -532,12 +532,12 @@ test('validateRSAA/isValidRSAA must identify conformant RSAAs', (t) => {
     }
   };
   t.ok(
-      validateRSAA(action27).includes('[CALL_API].cache property must be undefined or a plain JavaScript object'),
-      '[CALL_API].cache property must be undefined or a plain JavaScript object (validateRSAA)'
+      validateRSAA(action27).includes('[CALL_API].cache property must be undefined or an object implementing the functions: has,get,set'),
+      '[CALL_API].cache property must be undefined or an object implementing the functions: has,get,set (validateRSAA)'
   );
   t.notOk(
       isValidRSAA(action27),
-      '[CALL_API].cache property must be undefined or a plain JavaScript object (isValidRSAA)'
+      '[CALL_API].cache property must be undefined or an object implementing the functions: has,get,set (isValidRSAA)'
   );
 
   const action28 = {
@@ -546,39 +546,22 @@ test('validateRSAA/isValidRSAA must identify conformant RSAAs', (t) => {
       method: 'GET',
       types: ['REQUEST', 'SUCCESS', 'FAILURE'],
       cache: {
-        what: () => {},
+        has: '',
+        set: '',
+        get: ''
       }
     }
   };
   t.ok(
-    validateRSAA(action28).includes(`Invalid [CALL_API].cache functions: ${Object.keys(action28[CALL_API].cache)}`),
-    `Invalid [CALL_API].cache functions: ${Object.keys(action28[CALL_API].cache)} (validateRSAA)`
+    validateRSAA(action28).includes('[CALL_API].cache property must be undefined or an object implementing the functions: has,get,set'),
+    '[CALL_API].cache property must be undefined or an object implementing the functions: has,get,set (validateRSAA)'
   );
   t.notOk(
     isValidRSAA(action28),
-    `Invalid [CALL_API].cache functions: ${Object.keys(action28[CALL_API].cache)} (isValidaRSAA)`
+    '[CALL_API].cache property must be undefined or an object implementing the functions: has,get,set (isValidRSAA)'
   );
 
   const action29 = {
-    [CALL_API]: {
-      endpoint: '',
-      method: 'GET',
-      types: ['REQUEST', 'SUCCESS', 'FAILURE'],
-      cache: {
-        set: ''
-      }
-    }
-  };
-  t.ok(
-    validateRSAA(action29).includes('[CALL_API].cache property must be an object implementing the functions: has,get,set'),
-    '[CALL_API].cache property must be an object implementing the functions: has,get,set (validateRSAA)'
-  );
-  t.notOk(
-    isValidRSAA(action29),
-    '[CALL_API].cache property must be an object implementing the functions: has,get,set (isValidRSAA)'
-  );
-
-  const action30 = {
     [CALL_API]: {
       endpoint: '',
       method: 'GET',
@@ -591,12 +574,12 @@ test('validateRSAA/isValidRSAA must identify conformant RSAAs', (t) => {
     }
   };
   t.equal(
-      validateRSAA(action30).length,
+      validateRSAA(action29).length,
       0,
       '[CALL_API].cache may be an object implementing the functions: has,get,set (validateRSAA)'
   );
   t.ok(
-      isValidRSAA(action30),
+      isValidRSAA(action29),
       '[CALL_API].cache may be an object implementing the functions: has,get,set (isValidRSAA)'
   );
 
