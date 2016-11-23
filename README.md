@@ -199,11 +199,9 @@ A more useful possibility is to give `[CALL_API].bailout` a function. At runtime
 
 Often it is useful to be able to cache the API call being made to the server.
 
-You can tell `redux-api-middleware` to use a cache through `[CALL_API].cache`. The value should point to a function that will be passed the endpoint as the first argument and the resulting JSON data as the second argument.
+You can tell `redux-api-middleware` to use a cache through `[CALL_API].cache`. The value should point to an object implementing a cache API (see [`[CALL_API].cache`](#call_apicache)) with these three functions: `has` `get` and `set`.
 
-The second argument will only be passed when an API call has been made and there is data to store in the cache. If the function is called with only the endpoint it should return the cached data, if present.
-
-**NOTE** You will only be able to use a `[CALL_API].cache` function for APIs returning JSON data.
+**NOTE** You will only be able to use a `[CALL_API].cache` API for endpoints returning JSON data.
 
 An example cache implementation could look like this:
 
@@ -211,13 +209,15 @@ An example cache implementation could look like this:
 {
   [CALL_API]: {
     ...
-    cache: (endpoint, dataToCache) => {
-      if (dataToCache) {
-        // Add data to cache
-        someCacheImplementation.put(endpoint, dataToCache);
-      } else {
-        // Return possibly cached data
-        return someCacheImplementation.has(endpoint) ? someCacheImplementation.get(endpoint) : undefined;
+    cache: {
+      has: (endpoint) => someCacheImplementation.has(endpoint),
+      async get(endpoint) {
+       // Returns cached data for endpoint
+       return someCacheImplementation.get(endpoint);
+      },
+      set(endpoint, jsonToCache) {
+       // Adds data to cache for key endpoint
+       someCacheImplementation.set(endpoint, jsonToCache);
       }
     }
     ...
@@ -623,7 +623,16 @@ The optional `[CALL_API].bailout` property MUST be a boolean or a function.
 
 #### `[CALL_API].cache`
 
-The optional `[CALL_API].cache` property MUST be a function.
+The optional `[CALL_API].cache` property MUST be a plain JavaSCript object implementing the functions `has`, `get` and `set`.
+
+##### `has(endpoint)`
+Takes an `endpoint` as its only argument. Should return `true` if the endpoint is in the cache and valid. Otherwise `false` should be returned.
+
+##### `get(endpoint)`
+Takes an `endpoint` as its only argument. Should return the cached result for the given endpoint.
+
+##### `set(endpoint, jsonToCache)`
+Takes an `endpoint` and the `jsonToCache` (the result of calling the endpoint) as its argument. The implementation should store the `jsonToCache` in the cache.
 
 #### `[CALL_API].types`
 

@@ -38,7 +38,7 @@ function apiMiddleware({ getState }) {
 
     // Parse the validated RSAA action
     const callAPI = action[CALL_API];
-    var { endpoint, headers, options = {} } = callAPI;
+    let { endpoint, headers, options = {} } = callAPI;
     const { method, body, credentials, bailout, types, cache } = callAPI;
     const [requestType, successType, failureType] = normalizeTypeDescriptors(types);
 
@@ -76,20 +76,19 @@ function apiMiddleware({ getState }) {
     }
 
     // Is it cached?
-    if (typeof cache === 'function') {
+    if (cache) {
       try {
-        const cachedJson = await cache(endpoint);
-        if (cachedJson) {
+        if (await cache.has(endpoint)) {
           return next(await actionWith(
               successType,
-              [action, getState(), fakeJsonResponse(cachedJson)]
+              [action, getState(), fakeJsonResponse(await cache.get(endpoint))]
           ));
         }
       } catch (e) {
         return next(await actionWith(
           {
             ...requestType,
-            payload: new RequestError(`[CALL_API].cache function failed: ${e.message}`),
+            payload: new RequestError(`[CALL_API].cache API function failed: ${e.message}`),
             error: true
           },
           [action, getState()]
@@ -159,8 +158,8 @@ function apiMiddleware({ getState }) {
           successType,
           [action, getState(), res]
       );
-      if (typeof cache === 'function') {
-        cache(endpoint, action.payload);
+      if (cache) {
+        cache.set(endpoint, action.payload);
       }
       return next(action);
     } else {
