@@ -26,7 +26,7 @@ function isValidTypeDescriptor(obj) {
     'type',
     'payload',
     'meta'
-  ]
+  ];
 
   if (!isPlainObject(obj)) {
     return false;
@@ -64,7 +64,8 @@ function validateRSAA(action) {
     'headers',
     'credentials',
     'bailout',
-    'types'
+    'types',
+    'cache'
   ];
   const validMethods = [
     'GET',
@@ -79,7 +80,12 @@ function validateRSAA(action) {
     'omit',
     'same-origin',
     'include'
-  ]
+  ];
+  const requiredCacheFunctions = [
+    'has',
+    'get',
+    'set'
+  ];
 
   if (!isRSAA(action)) {
     validationErrors.push('RSAAs must be plain JavaScript objects with a [CALL_API] property');
@@ -102,7 +108,7 @@ function validateRSAA(action) {
     }
   }
 
-  const { endpoint, method, headers, options, credentials, types, bailout } = callAPI;
+  const { endpoint, method, headers, options, credentials, types, bailout, cache } = callAPI;
   if (typeof endpoint === 'undefined') {
     validationErrors.push('[CALL_API] must have an endpoint property');
   } else if (typeof endpoint !== 'string' && typeof endpoint !== 'function') {
@@ -147,6 +153,12 @@ function validateRSAA(action) {
     }
     if (typeof failureType !== 'string' && typeof failureType !== 'symbol' && !isValidTypeDescriptor(failureType)) {
       validationErrors.push('Invalid failure type');
+    }
+  }
+
+  if (cache != null) {
+    if (!requiredCacheFunctions.every((f) => typeof cache[f] === 'function')) {
+      validationErrors.push(`[CALL_API].cache property must be undefined or an object implementing the functions: ${requiredCacheFunctions}`);
     }
   }
 
