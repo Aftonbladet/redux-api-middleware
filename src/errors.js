@@ -55,12 +55,17 @@ class RequestError extends Error {
  *  'Content-Type' header signals a JSON response
  */
 class ApiError extends Error {
-  constructor(status, statusText, response) {
+  constructor(status, statusText, response, res) {
     super();
     this.name = 'ApiError';
     this.status = status;
     this.statusText = statusText;
     this.response = response;
+    if (status >= 300 || status < 400) {
+      this.responseHeaders = {
+        xReplacementId: res.headers.get('x-replacement-id'),
+      };
+    }
     this.message = `${status} - ${statusText}`;
   }
 }
