@@ -75,7 +75,7 @@ function normalizeTypeDescriptors(types) {
   failureType = {
     payload: (action, state, res) =>
       getJSON(res).then(
-        (json) => new ApiError(res.status, res.statusText, json)
+        (json) => new ApiError(res.status, res.statusText, json, res)
       ),
     ...failureType
   };
