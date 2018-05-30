@@ -61,11 +61,10 @@ class ApiError extends Error {
     this.status = status;
     this.statusText = statusText;
     this.response = response;
-    if (status >= 300 || status < 400) {
-      this.responseHeaders = {
-        xReplacementUrl: res.headers.get('x-replacement-url'),
-      };
-    }
+    this.responseHeaders = {};
+    res.headers.forEach((value, key) => {
+      this.responseHeaders[key] = value;
+    });
     this.message = `${status} - ${statusText}`;
   }
 }
